@@ -8,12 +8,22 @@ services:
     command: go run main.go
     links:
       - clickhouse
-      - tarantool
+      - tarantool1
+      - tarantool2
       
-  tarantool:
+  tarantool1:
     image: tarantool/tarantool:1.10.2
     environment:
-      TARANTOOL_REPLICATION: "tarantool"
+      TARANTOOL_REPLICATION: "tarantool1,tarantool2"
+    networks:
+      - mynet
+    ports:
+      - "3301:3301"
+
+  tarantool2:
+    image: tarantool/tarantool:1.10.2
+    environment:
+      TARANTOOL_REPLICATION: "tarantool1,tarantool2"
     networks:
       - mynet
     ports:
@@ -24,7 +34,6 @@ services:
     ports:
       - 127.0.0.1:8123:8123
       - 127.0.0.1:9000:9000
-      - 127.0.0.1:9009:9009
   
 networks:
   mynet:
