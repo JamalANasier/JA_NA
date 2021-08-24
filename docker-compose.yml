@@ -1,0 +1,31 @@
+version: "2.3"
+services:
+  app:
+    image: golang:alpine3.14
+    volumes:
+      - .:/go/src/pacmango
+    working_dir: /go/src/pacmango
+    command: go run main.go
+    links:
+      - clickhouse
+      - tarantool
+      
+  tarantool:
+    image: tarantool/tarantool:1.10.2
+    environment:
+      TARANTOOL_REPLICATION: "tarantool"
+    networks:
+      - mynet
+    ports:
+      - "3302:3301"
+  
+  clickhouse:
+    image: yandex/clickhouse-server
+    ports:
+      - 127.0.0.1:8123:8123
+      - 127.0.0.1:9000:9000
+      - 127.0.0.1:9009:9009
+  
+networks:
+  mynet:
+    driver: bridge
