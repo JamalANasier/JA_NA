@@ -1,28 +1,44 @@
 package main
 
 import (
-	"context"
+	"database/sql"
 	"fmt"
+	"log"
 
-	"github.com/viciious/go-tarantool"
+	"github.com/ClickHouse/clickhouse-go"
 )
 
 func main() {
-	opts := tarantool.Options{User: "guest"}
-	conn, err := tarantool.Connect("127.0.0.1:3301", &opts)
-	if err != nil {
-		fmt.Printf("Connection refused: %s\n", err.Error())
+	var err error
+	connect, err := sql.Open("clickhouse", "tcp://127.0.0.1:9000?username=&compress=true&debug=true")
+	checkErr(err)
+	if err := connect.Ping(); err != nil {
+		if exception, ok := err.(*clickhouse.Exception); ok {
+			fmt.Printf("[%d] %s \n%s\n", exception.Code, exception.Message, exception.StackTrace)
+		} else {
+			fmt.Println(err)
+		}
 		return
 	}
 
-	query := &tarantool.Insert{Space: "examples", Tuple: []interface{}{uint64(99999), "BB"}}
-	resp := conn.Exec(context.Background(), query)
+	_, err = connect.Exec(`
+		CREATE TABLE IF NOT EXISTS players_log (
+			currentTime  DateTime,
+			userAgent String,
+			ipAddress String,
+			dataBefore String,
+			dataAfter String,
+		) engine=Memory
+	`)
 
-	if resp.Error != nil {
-		fmt.Println("Insert failed", resp.Error)
-	} else {
-		fmt.Println(fmt.Sprintf("Insert succeeded: %#v", resp.Data))
+	checkErr(err)
+	tx, err := connect.Begin()
+	checkErr(err)
+	checkErr(tx.Commit())
+}
+
+func errCheck(err string) {
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	conn.Close()
 }
