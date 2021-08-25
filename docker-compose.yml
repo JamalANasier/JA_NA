@@ -3,8 +3,8 @@ services:
   app:
     image: golang:alpine3.14
     volumes:
-      - .:/go/src/pacmango
-    working_dir: /go/src/pacmango
+      - .:/go/src/JA_NA
+    working_dir: /go/src/JA_NA
     command: go run main.go
     links:
       - clickhouse

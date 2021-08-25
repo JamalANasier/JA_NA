@@ -1,76 +1,108 @@
-package main
+package tarantool
 
 import (
-	"database/sql"
-	"fmt"
+	"github.com/tarantool/go-tarantool"
 	"log"
 	"time"
-
-	"github.com/ClickHouse/clickhouse-go"
 )
 
-func tarantool() {
-	connect, err := sql.Open("clickhouse", "tcp://127.0.0.1:9000?username=&compress=true&debug=true")
-	checkErr(err)
-	if err := connect.Ping(); err != nil {
-		if exception, ok := err.(*clickhouse.Exception); ok {
-			fmt.Printf("[%d] %s \n%s\n", exception.Code, exception.Message, exception.StackTrace)
-		} else {
-			fmt.Println(err)
-		}
-		return
+func connectTarantool() {
+	spaceNo := uint32(512)
+	indexNo := uint32(0)
+
+	server := "127.0.0.1:3013"
+	opts := tarantool.Opts{
+		Timeout:       500 * time.Millisecond,
+		Reconnect:     1 * time.Second,
+		MaxReconnects: 3,
+		User:          "test",
+		Pass:          "test",
 	}
-
-	_, err = connect.Exec(`
-		CREATE TABLE IF NOT EXISTS example (
-			country_code FixedString(2),
-			os_id        UInt8,
-			browser_id   UInt8,
-			categories   Array(Int16),
-			action_day   Date,
-			action_time  DateTime
-		) engine=Memory
-	`)
-
-	checkErr(err)
-	tx, err := connect.Begin()
-	checkErr(err)
-	stmt, err := tx.Prepare("INSERT INTO example (country_code, os_id, browser_id, categories, action_day, action_time) VALUES (?, ?, ?, ?, ?, ?)")
-	checkErr(err)
-
-	for i := 0; i < 100; i++ {
-		if _, err := stmt.Exec(
-			"RU",
-			10+i,
-			100+i,
-			[]int16{1, 2, 3},
-			time.Now(),
-			time.Now(),
-		); err != nil {
-			log.Fatal(err)
-		}
-	}
-	checkErr(tx.Commit())
-	rows, err := connect.Query("SELECT country_code, os_id, browser_id, categories, action_day, action_time FROM example")
-	checkErr(err)
-	for rows.Next() {
-		var (
-			country               string
-			os, browser           uint8
-			categories            []int16
-			actionDay, actionTime time.Time
-		)
-		checkErr(rows.Scan(&country, &os, &browser, &categories, &actionDay, &actionTime))
-		log.Printf("country: %s, os: %d, browser: %d, categories: %v, action_day: %s, action_time: %s", country, os, browser, categories, actionDay, actionTime)
-	}
-
-	if _, err := connect.Exec("DROP TABLE example"); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func checkErr(err error) {
+	client, err := tarantool.Connect(server, opts)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to connect: %s", err.Error())
 	}
+
+	resp, err := client.Ping()
+	log.Println(resp.Code)
+	log.Println(resp.Data)
+	log.Println(err)
+
+	// insert new tuple { 10, 1 }
+	resp, err = client.Insert(spaceNo, []interface{}{uint(10), 1})
+    // or
+	resp, err = client.Insert("test", []interface{}{uint(10), 1})
+	log.Println("Insert")
+	log.Println("Error", err)
+	log.Println("Code", resp.Code)
+	log.Println("Data", resp.Data)
+
+	// delete tuple with primary key { 10 }
+	resp, err = client.Delete(spaceNo, indexNo, []interface{}{uint(10)})
+    // or
+	resp, err = client.Delete("test", "primary", []interface{}{uint(10)})
+	log.Println("Delete")
+	log.Println("Error", err)
+	log.Println("Code", resp.Code)
+	log.Println("Data", resp.Data)
+
+	// replace tuple with { 13, 1 }
+	resp, err = client.Replace(spaceNo, []interface{}{uint(13), 1})
+    // or
+	resp, err = client.Replace("test", []interface{}{uint(13), 1})
+	log.Println("Replace")
+	log.Println("Error", err)
+	log.Println("Code", resp.Code)
+	log.Println("Data", resp.Data)
+
+	// update tuple with primary key { 13 }, incrementing second field by 3
+	resp, err = client.Update(spaceNo, indexNo, []interface{}{uint(13)}, []interface{}{[]interface{}{"+", 1, 3}})
+    // or
+	resp, err = client.Update("test", "primary", []interface{}{uint(13)}, []interface{}{[]interface{}{"+", 1, 3}})
+	log.Println("Update")
+	log.Println("Error", err)
+	log.Println("Code", resp.Code)
+	log.Println("Data", resp.Data)
+
+	// insert tuple {15, 1} or increment second field by 1
+	resp, err = client.Upsert(spaceNo, []interface{}{uint(15), 1}, []interface{}{[]interface{}{"+", 1, 1}})
+    // or
+	resp, err = client.Upsert("test", []interface{}{uint(15), 1}, []interface{}{[]interface{}{"+", 1, 1}})
+	log.Println("Upsert")
+	log.Println("Error", err)
+	log.Println("Code", resp.Code)
+	log.Println("Data", resp.Data)
+
+	// select just one tuple with primay key { 15 }
+	resp, err = client.Select(spaceNo, indexNo, 0, 1, tarantool.IterEq, []interface{}{uint(15)})
+    // or
+	resp, err = client.Select("test", "primary", 0, 1, tarantool.IterEq, []interface{}{uint(15)})
+	log.Println("Select")
+	log.Println("Error", err)
+	log.Println("Code", resp.Code)
+	log.Println("Data", resp.Data)
+
+	// select tuples by condition ( primay key > 15 ) with offset 7 limit 5
+	// BTREE index supposed
+	resp, err = client.Select(spaceNo, indexNo, 7, 5, tarantool.IterGt, []interface{}{uint(15)})
+    // or
+	resp, err = client.Select("test", "primary", 7, 5, tarantool.IterGt, []interface{}{uint(15)})
+	log.Println("Select")
+	log.Println("Error", err)
+	log.Println("Code", resp.Code)
+	log.Println("Data", resp.Data)
+
+	// call function 'func_name' with arguments
+	resp, err = client.Call("func_name", []interface{}{1, 2, 3})
+	log.Println("Call")
+	log.Println("Error", err)
+	log.Println("Code", resp.Code)
+	log.Println("Data", resp.Data)
+
+	// run raw lua code
+	resp, err = client.Eval("return 1 + 2", []interface{}{})
+	log.Println("Eval")
+	log.Println("Error", err)
+	log.Println("Code", resp.Code)
+	log.Println("Data", resp.Data)
 }
