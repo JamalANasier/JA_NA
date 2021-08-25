@@ -28,8 +28,8 @@ type  players_log struct {
 }
 
 func setupRoutes(app *fiber.App) {
-	app.Get("/api/v1/getplayers", book.getPlayersId)
-	app.Post("/api/v1/getplayers_log", book.getPlayersLog)
+	app.Get("/api/v1/players", book.GetPlayers)
+	app.Post("/api/v1/players_log", book.NewLog)
 }
 
 func initTarantool() {
@@ -48,7 +48,16 @@ func initTarantool() {
 	if err != nil {
 		return nil, err
 	}
-	resp, err = client.Select(spaceNo, indexNo, 0, 1, tarantool.IterEq, []interface{}{uint(15)})
+	_, err = conn.Replace(spaceNo, []interface{}{uint(1111), 19, "world"})
+	if err != nil {
+		conn.Close()
+		return nil, err
+	}
+	_, err = conn.Replace(spaceNo, []interface{}{uint(1112), 21, "werld"})
+	if err != nil {
+		conn.Close()
+		return nil, err
+	}
 	return conn, nil
 }
 
@@ -65,20 +74,36 @@ func initClickHouse() {
 		return
 	}
 
-	var items []struct {
+	_, err = connect.Exec(`
+		CREATE TABLE IF NOT EXISTS players_log (
+			currentTime  DateTime,
+			userAgent String,
+			ipAddress String,
+			dataBefore String,
+			dataAfter String,
+		) engine=Memory
+	`)
 
-		currentTime time.Time `db:"currentTime"`
-		userAgent string    `db:"userAgent"`
-		ipAddress string    `db:"ipAddress"`
-		dataBefore string    `db:"dataBefore"`
-		dataAfter string    `db:"dataAfter"`
+	errCheck(err)
+	tx, err := connect.Begin()
+	errCheck(err)
+	errCheck(tx.Commit())
+
+	stmt, err := tx.Prepare("INSERT INTO players_log (currentTime, userAgent, ipAddress, dataBefore, dataAfter) VALUES (?, ?, ?, ?, ?, ?)")
+	checkErr(err)
+
+	for i := 0; i < 100; i++ {
+		if _, err := stmt.Exec(
+			time.Now(),
+			"userAgent",
+			"userIpAddress",
+			"dataBefore this",
+			"dataAfter this"
+		); err != nil {
+			log.Fatal(err)
+		}
 	}
-
-	checkErr(connect.Select(&items, "SELECT currentTime, userAgent, ipAddress, dataBefore, dataAfter FROM players_log"))
-
-	for _, item := range items {
-		log.Printf("currentTime: %d, userAgent: %v, browser: %s, categories: %v, action_time: %s", item.currentTime, item.userAgent, item.ipAddress, item.dataBefore, item.dataAfter)
-	}
+	checkErr(tx.Commit())
 }
 
 func main() {
