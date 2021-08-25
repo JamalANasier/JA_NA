@@ -1,0 +1,10 @@
+{
+    "editor.codeActionsOnSave": false,
+    "task.autoDetect": "off",
+    "telemetry.enableCrashReporter": false,
+    "javascript.preferences.quoteStyle": "double",
+    "typescript.preferences.quoteStyle": "double",
+    "editor.quickSuggestions": false,
+    "problems.autoReveal": false,
+    "editor.lightbulb.enabled": false
+}
