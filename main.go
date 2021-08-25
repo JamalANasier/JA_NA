@@ -1,92 +1,66 @@
-package main
+// +build integration
+
+package it_test
 
 import (
-	"fmt"
-	"log"
-	"time"
-
-
-	"github.com/jmoiron/sqlx"
-	"github.com/ClickHouse/clickhouse-go"
-	"github.com/tarantool/go-tarantool"
+	"github.com/arielizuardi/golang-backend-blog/article/repository"
+	"github.com/arielizuardi/golang-backend-blog/model"
 )
 
-type  players struct {
-	gorm.Model
-	Id  uint16 `json:"Id"`
-	Name String `json:"Name"`
-	Age int    `json:"Age"`
-}
-
-type  players_log struct {
-	gorm.Model
-	currentTime  DateTime `json:"currentTime"`
-	userAgent String `json:"userAgent"` 
-	ipAddress String `json:"ipAddress"`
-	dataBefore String `json:"dataBefore"`
-	dataAfter String `json:"dataAfter"`
-}
-
-func setupRoutes(app *fiber.App) {
-	app.Get("/api/v1/getplayers", book.getPlayersId)
-	app.Post("/api/v1/getplayers_log", book.getPlayersLog)
-}
-
-func initTarantool() {
-	spaceNo := uint32(512)
-	indexNo := uint32(0)
-
-	server := "127.0.0.1:3013"
-	opts := tarantool.Opts{
-		Timeout:       500 * time.Millisecond,
-		Reconnect:     1 * time.Second,
-		MaxReconnects: 3,
-		User:          "test",
-		Pass:          "test",
-	}
-	conn, err := tarantool.Connect(server, opts)
-	if err != nil {
-		return nil, err
-	}
-	resp, err = client.Select(spaceNo, indexNo, 0, 1, tarantool.IterEq, []interface{}{uint(15)})
-	return conn, nil
-}
-
-func initClickHouse() {
-	var err error
-	connect, err := sql.Open("clickhouse", "tcp://127.0.0.1:9000?username=&compress=true&debug=true")
-	errCheck(err)
-	if err := connect.Ping(); err != nil {
-		if exception, ok := err.(*clickhouse.Exception); ok {
-			fmt.Printf("[%d] %s \n%s\n", exception.Code, exception.Message, exception.StackTrace)
-		} else {
-			fmt.Println(err)
-		}
-		return
+func (p *PostgresRepositoryTestSuite) TestPostgresArticleRepository_CreateArticle() {
+	newArticle := &model.Article{
+		Title:   "my-title",
+		Content: "my-content",
+		Author:  "my-author",
 	}
 
-	var items []struct {
+	r := repository.NewPostgresArticleRepository(p.gormDB)
+	p.Assert().NoError(r.CreateArticle(newArticle))
 
-		currentTime time.Time `db:"currentTime"`
-		userAgent string    `db:"userAgent"`
-		ipAddress string    `db:"ipAddress"`
-		dataBefore string    `db:"dataBefore"`
-		dataAfter string    `db:"dataAfter"`
-	}
+	id := newArticle.ID // new id is created
 
-	checkErr(connect.Select(&items, "SELECT currentTime, userAgent, ipAddress, dataBefore, dataAfter FROM players_log"))
-
-	for _, item := range items {
-		log.Printf("currentTime: %d, userAgent: %v, browser: %s, categories: %v, action_time: %s", item.currentTime, item.userAgent, item.ipAddress, item.dataBefore, item.dataAfter)
-	}
+	var result model.Article
+	p.Assert().NoError(p.gormDB.First(&result, model.Article{ID: id}).Error)
+	p.Assert().Equal(newArticle.Title, result.Title)
+	p.Assert().Equal(newArticle.Content, result.Content)
+	p.Assert().Equal(newArticle.Author, result.Author)
 }
 
-func main() {
-	app := fiber.New()
-	initDatabase()
+func (p *PostgresRepositoryTestSuite) TestPostgresArticleRepository_GetArticleByID() {
+	myArticle := &model.Article{
+		Title:   "find-my-title",
+		Content: "find-my-content",
+		Author:  "find-my-author",
+	}
 
-	setupRoutes(app)
-	app.Listen(3000)
+	r := repository.NewPostgresArticleRepository(p.gormDB)
+	p.Assert().NoError(r.CreateArticle(myArticle))
 
-	defer database.DBConn.Close()
+	result, err := r.GetArticleByID(myArticle.ID)
+	p.Assert().NoError(err)
+	p.Assert().Equal(myArticle.Title, result.Title)
+	p.Assert().Equal(myArticle.Content, result.Content)
+	p.Assert().Equal(myArticle.Author, result.Author)
+}
+
+func (p *PostgresRepositoryTestSuite) TestPostgresArticleRepository_GetAllArticle() {
+	firstArticle := &model.Article{
+		Title:   "first-title",
+		Content: "first-content",
+		Author:  "first-author",
+	}
+
+	secondArticle := &model.Article{
+		Title:   "second-title",
+		Content: "second-content",
+		Author:  "second-author",
+	}
+
+	r := repository.NewPostgresArticleRepository(p.gormDB)
+	p.Assert().NoError(r.CreateArticle(firstArticle))
+	p.Assert().NoError(r.CreateArticle(secondArticle))
+
+	result, err := r.GetAllArticle()
+	p.Assert().NoError(err)
+	p.Assert().Len(result, 2)
 }
