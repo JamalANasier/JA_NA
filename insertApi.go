@@ -1,30 +1,29 @@
-package main
+package clickHouse
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"time"
 
-
-	"github.com/jmoiron/sqlx"
 	"github.com/ClickHouse/clickhouse-go"
 	"github.com/tarantool/go-tarantool"
 )
 
-type  players struct {
+type players struct {
 	gorm.Model
-	Id  uint16 `json:"Id"`
+	Id   uint16 `json:"Id"`
 	Name String `json:"Name"`
-	Age int    `json:"Age"`
+	Age  int    `json:"Age"`
 }
 
-type  players_log struct {
+type players_log struct {
 	gorm.Model
-	currentTime  DateTime `json:"currentTime"`
-	userAgent String `json:"userAgent"` 
-	ipAddress String `json:"ipAddress"`
-	dataBefore String `json:"dataBefore"`
-	dataAfter String `json:"dataAfter"`
+	currentTime DateTime `json:"currentTime"`
+	userAgent   String   `json:"userAgent"`
+	ipAddress   String   `json:"ipAddress"`
+	dataBefore  String   `json:"dataBefore"`
+	dataAfter   String   `json:"dataAfter"`
 }
 
 func setupRoutes(app *fiber.App) {
@@ -98,7 +97,7 @@ func initClickHouse() {
 			"userAgent",
 			"userIpAddress",
 			"dataBefore this",
-			"dataAfter this"
+			"dataAfter this",
 		); err != nil {
 			log.Fatal(err)
 		}

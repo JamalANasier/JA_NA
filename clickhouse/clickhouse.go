@@ -3,10 +3,9 @@ package clickhouse
 import (
 	"fmt"
 	"log"
-	"time"
 
-	"github.com/jmoiron/sqlx"
-	"github.com/ClickHouse/clickhouse-go"
+	_ "github.com/ClickHouse/clickhouse-go"
+	sql "github.com/jmoiron/sqlx"
 )
 
 func clickhouse() {
