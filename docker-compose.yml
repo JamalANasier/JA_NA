@@ -12,7 +12,7 @@ services:
       - tarantool2
       
   tarantool1:
-    image: tarantool/tarantool:1.10.2
+    image: tarantool/tarantool:latest
     environment:
       TARANTOOL_REPLICATION: "tarantool1,tarantool2"
     networks:
@@ -21,7 +21,7 @@ services:
       - "3301:3301"
 
   tarantool2:
-    image: tarantool/tarantool:1.10.2
+    image: tarantool/tarantool:latest
     environment:
       TARANTOOL_REPLICATION: "tarantool1,tarantool2"
     networks:
