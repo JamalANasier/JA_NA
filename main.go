@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/jamalanasier/JA_NA/setupdb"
 	"github.com/tarantool/go-tarantool"
 )
 
 func main() {
 
+	setupdb.SetupClichouse()
 	conn, err := tarantool.Connect("127.0.0.1:3301", tarantool.Opts{
 		User: "guest",
 	})
@@ -25,12 +27,13 @@ func main() {
 		log.Fatalf("Cannot select table")
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("There is schematest table there")
+		fmt.Println("There is players table there")
 		log.Println("Code", resp.Code)
 		log.Println("Data", resp.Data)
 	}
 
 	//setupdb.SetupTarantool()
+	setupdb.SetupClichouse()
 
 	defer conn.Close()
 
