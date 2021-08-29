@@ -15,9 +15,22 @@ func main() {
 
 	if err != nil {
 		log.Fatalf("Connection refused")
+		fmt.Println(err.Error())
 	} else {
 		fmt.Println("Oke")
 	}
+
+	resp, err := conn.Select("players", "primary", 0, 1, tarantool.IterEq, []interface{}{uint(15)})
+	if err != nil {
+		log.Fatalf("Cannot select table")
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("There is schematest table there")
+		log.Println("Code", resp.Code)
+		log.Println("Data", resp.Data)
+	}
+
+	//setupdb.SetupTarantool()
 
 	defer conn.Close()
 
