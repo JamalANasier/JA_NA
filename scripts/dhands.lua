@@ -16,7 +16,7 @@ local st = box.schema.space.create('players', {
 })
 st:create_index('primary', {
     type = 'hash', 
-    parts = {1, 'uint'}, 
+    parts = {1, 'unsigned'}, 
     unique = true,
     if_not_exists = true,
 })
