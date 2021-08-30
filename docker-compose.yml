@@ -1,41 +1,18 @@
 version: "3.3"
 services:
-  app:
-    image: golang:alpine3.14
+  tt1: # master
+    image: tarantool/tarantool:latest
     volumes:
-      - .:/go/src/JA_NA
-    working_dir: /go/src/JA_NA
-    command: go run main.go
-    links:
-      - clickhouse
-      - tarantool1
-      - tarantool2
+      - /Users/jamalabdulnasir/Go/golib/src/github.com/jamalanasier/ja_na/scripts/:/opt/tarantool/
+    command: tarantool /opt/tarantool/dhands.lua
+    environment:
+      - TARANTOOL_USER_NAME=tester
+      - TARANTOOL_USER_PASSWORD=tester
+    ports:
+      - 3303:3303
       
-  tarantool1:
-    image: tarantool/tarantool:latest
-    environment:
-      TARANTOOL_REPLICATION: "tarantool1,tarantool2"
-    networks:
-      - mynet
-    ports:
-      - "3301:3301"
-
-  tarantool2:
-    image: tarantool/tarantool:latest
-    environment:
-      TARANTOOL_REPLICATION: "tarantool1,tarantool2"
-    networks:
-      - mynet
-    ports:
-      - "3302:3301"
-  
-
   clickhouse:
     image: yandex/clickhouse-server
     ports:
       - 127.0.0.1:8123:8123
       - 127.0.0.1:9000:9000
-  
-networks:
-  mynet:
-    driver: bridge

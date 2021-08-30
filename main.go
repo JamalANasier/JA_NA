@@ -12,7 +12,7 @@ func main() {
 
 	setupdb.SetupClichouse()
 
-	conn, err := tarantool.Connect("127.0.0.1:3301", tarantool.Opts{
+	conn, err := tarantool.Connect("127.0.0.1:3303", tarantool.Opts{
 		User: "guest",
 	})
 

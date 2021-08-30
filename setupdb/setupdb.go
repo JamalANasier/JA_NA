@@ -14,7 +14,7 @@ func checkErr(err error) {
 	if err != nil {
 		log.Fatal(err)
 	} else {
-		fmt.Println("Connecting as guest")
+		fmt.Println("Success clickhouse ok")
 	}
 }
 
@@ -40,9 +40,9 @@ func SetupClichouse() {
 			dataBefore String,
 			dataAfter String
 		) 
-		ENGINE = ReplacingMergeTree(ack_time)
+		ENGINE = ReplacingMergeTree(currentTime)
 		PARTITION BY tuple()
-		ORDER BY (tenant_id, timestamp, alert_id);
+		ORDER BY (currentTime, userAgent);
 	`)
 	checkErr(err)
 }
@@ -51,7 +51,7 @@ func SetupTarantool() {
 	//spaceNo := uint32(512)
 	//indexNo := uint32(0)
 
-	server := "127.0.0.1:3301"
+	server := "127.0.0.1:3303"
 	opts := tarantool.Opts{
 		Timeout:       500 * time.Millisecond,
 		Reconnect:     1 * time.Second,
