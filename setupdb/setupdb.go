@@ -45,6 +45,7 @@ func SetupClichouse() {
 		ORDER BY (currentTime, userAgent);
 	`)
 	checkErr(err)
+	
 }
 
 func SetupTarantool() {
