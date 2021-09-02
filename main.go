@@ -10,8 +10,8 @@ import (
 func main() {
 
 	setupdb.SetupClichouse()
+	//setupdb.SetupTarantool()
 	app := fiber.New()
-
 	apibyid.SetupRoutes(app)
 	app.Listen(3000)
 	/*

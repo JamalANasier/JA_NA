@@ -10,18 +10,12 @@ import (
 
 	"github.com/gofiber/fiber"
 	"github.com/jamalanasier/JA_NA/apioffsetlimit"
+	"github.com/jamalanasier/JA_NA/apiplayerlog"
 	"github.com/tarantool/go-tarantool"
-	"gorm.io/gorm"
-)
-
-var (
-	DBConn  *gorm.DB
-	Connect *sql.DB
-	Err     error
 )
 
 type Players_log struct {
-	Id          uint     `json:"id,string,omitempty"`
+	Id          int      `json:"id,string,omitempty"`
 	Name        string   `json:"name"`
 	Age         int      `json:"age,string,omitempty"`
 	CurrentTime Datetime `json:"currentTime"`
@@ -52,9 +46,8 @@ func (t *Datetime) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-// GetBooks ...
 func GetBooks(c *fiber.Ctx) {
-	Connect, Err = sql.Open("clickhouse", "tcp://127.0.0.1:9000?debug=true")
+	Connect, Err := sql.Open("clickhouse", "tcp://127.0.0.1:9000?debug=true")
 	if Err != nil {
 		log.Printf("Failed to connect")
 		log.Fatal(Err)
@@ -99,19 +92,6 @@ func GetBooks(c *fiber.Ctx) {
 	c.Send(string(jsonData))
 }
 
-// GetBook ...
-func GetBook(c *fiber.Ctx) {
-	/*
-		id := c.Params("id")
-		db := DBConn
-		var book Book
-		db.Find(&book, id)
-		c.JSON(book)
-	*/
-	c.Send("Hello, World!")
-}
-
-// NewBook ...
 func NewBook(c *fiber.Ctx) {
 	p := new(Players_log)
 	err := c.BodyParser(p)
@@ -119,6 +99,12 @@ func NewBook(c *fiber.Ctx) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	connect, err := sql.Open("clickhouse", "tcp://127.0.0.1:9000?debug=true")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	conn, err := tarantool.Connect("127.0.0.1:3303", tarantool.Opts{
 		User: "guest",
 	})
@@ -135,7 +121,7 @@ func NewBook(c *fiber.Ctx) {
 		}
 
 		var (
-			tx, _   = Connect.Begin()
+			tx, _   = connect.Begin()
 			stmt, _ = tx.Prepare("INSERT INTO player_log (current_time, user_agent, ip_address, data_before, data_after) VALUES (?, ?, ?, ?, ?)")
 		)
 		defer stmt.Close()
@@ -160,6 +146,11 @@ func NewPlayer(c *fiber.Ctx) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	connect, err := sql.Open("clickhouse", "tcp://127.0.0.1:9000?debug=true")
+	if err != nil {
+		log.Fatal(err)
+	}
 	conn, err := tarantool.Connect("127.0.0.1:3303", tarantool.Opts{
 		User: "guest",
 	})
@@ -167,48 +158,37 @@ func NewPlayer(c *fiber.Ctx) {
 	if err != nil {
 		log.Fatalf("Connection refused")
 		fmt.Println(err.Error())
-	} else {
-		fmt.Println(conn)
-		_, err := conn.Upsert("players", []interface{}{int(p.Id), "Jamal", 25}, []interface{}{[]interface{}{"+", 1, 1}})
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
-
-		var (
-			tx, _   = Connect.Begin()
-			stmt, _ = tx.Prepare("INSERT INTO player_log (current_time, user_agent, ip_address, data_before, data_after) VALUES (?, ?, ?, ?, ?)")
-		)
-		defer stmt.Close()
-		if _, err := stmt.Exec(
-			p.CurrentTime,
-			p.UserAgent,
-			p.IpAddress,
-			p.DataBefore,
-			p.DataBefore,
-		); err != nil {
-			log.Fatal(err)
-			return
-		}
 	}
-	c.Send("Upsert ok")
-}
 
-// DeleteBook ...
-func DeleteBook(c *fiber.Ctx) {
-	/*
-		id := c.Params("id")
-		db := DBConn
-		var book Book
-		db.First(&book, id)
-		if book.Title == "" {
-			c.Status(http.StatusNotFound).Send("No book found with given id")
-			return
-		}
-		db.Delete(&book)
-		c.Status(http.StatusNoContent).Send()
-	*/
-	c.Send("Hello, World!")
+	resp, err := conn.Upsert("players", []interface{}{p.Id, p.Name, p.Age, 1}, []interface{}{[]interface{}{"+", 1, 1}})
+
+	if err != nil {
+		log.Fatal("tarantool exception", resp)
+		return
+	}
+
+	var (
+		tx, _   = connect.Begin()
+		stmt, _ = tx.Prepare("INSERT INTO player_log (current_time, user_agent, ip_address, data_before, data_after) VALUES (?, ?, ?, ?, ?)")
+	)
+	defer stmt.Close()
+	const layoutUS = "2006-01-02"
+
+	if _, err := stmt.Exec(
+		p.CurrentTime.Format(layoutUS),
+		p.UserAgent,
+		p.IpAddress,
+		p.DataBefore,
+		p.DataAfter,
+	); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Fatal(err)
+	}
+
+	c.Send("Upsert ok")
 }
 
 func helloWorld(c *fiber.Ctx) {
@@ -217,11 +197,10 @@ func helloWorld(c *fiber.Ctx) {
 
 func SetupRoutes(app *fiber.App) {
 	app.Get("/", helloWorld)
-	app.Get("/", helloWorld)
 
-	app.Get("/api/v1/getlogs/:limit&:offset", apioffsetlimit.GetBooks)
-	app.Get("/api/v1/book/:id", GetBook)
+	app.Get("/api/v1/getlogs", apioffsetlimit.GetLogs)
+	app.Get("/api/v1/getplayerlogs", apiplayerlog.GetPlayerLogs)
+	app.Get("/api/v1/books", GetBooks)
 	app.Post("/api/v1/newplayer", NewPlayer)
 	app.Post("/api/v1/book", NewBook)
-	app.Delete("/api/v1/book/:id", DeleteBook)
 }

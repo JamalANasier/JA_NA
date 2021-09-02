@@ -10,7 +10,7 @@ local s = box.schema.space.create('test', {
 s:create_index('primary', {type = 'tree', parts = {1, 'uint'}, if_not_exists = true})
 
 local st = box.schema.space.create('players', {
-    id = 514,
+    id = 0,
     temporary = true,
     if_not_exists = true,
     field_count = 4,

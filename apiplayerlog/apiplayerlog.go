@@ -1,4 +1,4 @@
-package apioffsetlimit
+package apiplayerlog
 
 import (
 	"database/sql"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber"
+	"github.com/tarantool/go-tarantool"
 )
 
 var (
@@ -16,9 +17,9 @@ var (
 	Err     error
 )
 
-type Alllogs struct {
-	Limit  int `json:"limit,string,omitempty" xml:"limit" form:"limit" `
-	Offset int `json:"offset,string,omitempty" xml:"offset" form:"offset"`
+type Player_log struct {
+	Id        int    `json:"id" xml:"id" form:"id"`
+	UserAgent string `json:"user_agent" xml:"user_agent" form:"user_agent"`
 }
 
 type Datetime struct {
@@ -36,19 +37,39 @@ func (t *Datetime) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-func GetLogs(c *fiber.Ctx) {
-	p := new(Alllogs)
+func GetPlayerLogs(c *fiber.Ctx) {
+	p := new(Player_log)
 
 	if err := c.BodyParser(p); err != nil {
 		log.Fatal(err)
 	}
+	server := "127.0.0.1:3303"
+	opts := tarantool.Opts{
+		Timeout:       500 * time.Millisecond,
+		Reconnect:     1 * time.Second,
+		MaxReconnects: 3,
+		User:          "guest",
+	}
+
+	client, err := tarantool.Connect(server, opts)
+	if err != nil {
+		log.Fatalf("Failed to connect: %s", err.Error())
+	} else {
+		fmt.Println("Connecting as guest")
+	}
+
+	resp, err := client.Select("players", "primary", 0, 0, tarantool.IterEq, []interface{}{uint(p.Id)})
+	if err != nil {
+		log.Fatal(err)
+	}
+	c.JSON(resp.Data)
 
 	Connect, Err = sql.Open("clickhouse", "tcp://127.0.0.1:9000?debug=true")
 	if Err != nil {
 		log.Printf("Failed to connect")
 		log.Fatal(Err)
 	}
-	rows, err := Connect.Query("SELECT current_time, user_agent, ip_address, data_before, data_after FROM player_log ORDER BY current_time LIMIT ? OFFSET ?", p.Limit, p.Offset)
+	rows, err := Connect.Query("SELECT current_time, user_agent, ip_address, data_before, data_after FROM player_log")
 	if err != nil {
 		log.Fatal(err)
 	}

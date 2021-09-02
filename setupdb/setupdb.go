@@ -23,7 +23,7 @@ func SetupClichouse() {
 		}
 		return
 	}
-
+	/*
 	_, err = connect.Exec(`
 	CREATE TABLE IF NOT EXISTS player_log (
 		current_time Date,
@@ -33,9 +33,8 @@ func SetupClichouse() {
 		data_after   String
 		) engine=Memory
 	`)
-
-	/*
-		_, err = connect.Exec(`
+	*/
+	_, err = connect.Exec(`
 			CREATE TABLE IF NOT EXISTS example (
 				country_code FixedString(2),
 				os_id        UInt8,
@@ -45,58 +44,57 @@ func SetupClichouse() {
 				action_time  DateTime
 				) engine=Memory
 			`)
-		*/
-	
-		if err != nil {
+
+	if err != nil {
 		log.Fatal(err)
-		}
-	/*	
-		va	r (
-				tx, _   = connect.Begin()
-		s	tmt, _ = tx.Prepare("INSERT INTO player_log (current_time, user_agent, ip_address, data_before, data_after) VALUES (?, ?, ?, ?, ?)")
+	}
+	/*
+		var (
+			tx, _   = connect.Begin()
+			stmt, _ = tx.Prepare("INSERT INTO player_log (current_time, user_agent, ip_address, data_before, data_after) VALUES (?, ?, ?, ?, ?)")
 		)
-	de	fer stmt.Close()
-	
+		defer stmt.Close()
+
 		for i := 0; i < 10; i++ {
 			if _, err := stmt.Exec(
-					time.Now(),
-			"RU",
-					"ipAppdress",
-					"dataBefore",
-					"dataAfter",
-		); err != nil {
-					log.Fatal(err)
-				}
-		}	
-		
-			if err := tx.Commit(); err != nil {
-			log.Fatal(err)
-			}
-	
-			rows, err := connect.Query("SELECT current_time, user_agent, ip_address, data_before, data_after FROM player_log")
-			if err != nil {
-			log.Fatal(err)
-	}
-		de	fer rows.Close()
-	
-			for rows.Next() {
-			var (
-				currentTime                                 time.Time
-					userAgent, ipAddress, dataBefore, dataAfter string
-				)
-				if err := rows.Scan(&currentTime, &userAgent, &ipAddress, &dataBefore, &dataAfter); err != nil {
+				time.Now(),
+				"RU",
+				"ipAppdress",
+				"dataBefore",
+				"dataAfter",
+			); err != nil {
 				log.Fatal(err)
 			}
-				log.Printf("currentTime: %s, userAgent: %s, ipAddress: %s, dataBefore: %s, dataAfter: %s", currentTime, userAgent, ipAddress, dataBefore, dataAfter)
-			}
-
-		if err := rows.Err(); err != nil {
-			log.Fatal(err)
 		}
 
-		/*if _, err := connect.Exec("DROP TABLE example"); err != nil {
+		if err := tx.Commit(); err != nil {
 			log.Fatal(err)
-		}*/
+		}
+	*/
+	rows, err := connect.Query("SELECT current_time, user_agent, ip_address, data_before, data_after FROM player_log")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			currentTime                                 time.Time
+			userAgent, ipAddress, dataBefore, dataAfter string
+		)
+		if err := rows.Scan(&currentTime, &userAgent, &ipAddress, &dataBefore, &dataAfter); err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("currentTime: %s, userAgent: %s, ipAddress: %s, dataBefore: %s, dataAfter: %s", currentTime, userAgent, ipAddress, dataBefore, dataAfter)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	if _, err := connect.Exec("DROP TABLE example"); err != nil {
+		log.Fatal(err)
+	}
 
 }
 
