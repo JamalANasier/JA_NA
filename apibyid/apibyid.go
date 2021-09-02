@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber"
+	"github.com/jamalanasier/JA_NA/apioffsetlimit"
 	"github.com/tarantool/go-tarantool"
 	"gorm.io/gorm"
 )
@@ -218,7 +219,7 @@ func SetupRoutes(app *fiber.App) {
 	app.Get("/", helloWorld)
 	app.Get("/", helloWorld)
 
-	app.Get("/api/v1/books", GetBooks)
+	app.Get("/api/v1/getlogs/:limit&:offset", apioffsetlimit.GetBooks)
 	app.Get("/api/v1/book/:id", GetBook)
 	app.Post("/api/v1/newplayer", NewPlayer)
 	app.Post("/api/v1/book", NewBook)
