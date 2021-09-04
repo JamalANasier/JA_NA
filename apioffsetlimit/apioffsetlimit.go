@@ -17,8 +17,8 @@ var (
 )
 
 type Alllogs struct {
-	Limit  int `json:"limit,string,omitempty" xml:"limit" form:"limit" `
-	Offset int `json:"offset,string,omitempty" xml:"offset" form:"offset"`
+	Limit  string `json:"limit"`
+	Offset string `json:"offset"`
 }
 
 type Datetime struct {
@@ -48,7 +48,13 @@ func GetLogs(c *fiber.Ctx) {
 		log.Printf("Failed to connect")
 		log.Fatal(Err)
 	}
-	rows, err := Connect.Query("SELECT current_time, user_agent, ip_address, data_before, data_after FROM player_log ORDER BY current_time LIMIT ? OFFSET ?", p.Limit, p.Offset)
+	var (
+		strQuery string = "SELECT current_time, user_agent, ip_address, data_before, data_after FROM player_log ORDER BY current_time"
+	)
+
+	myslice := []string{strQuery, "LIMIT", p.Limit, "OFFSET", p.Offset}
+	resultQuery := strings.Join(myslice, " ")
+	rows, err := Connect.Query(resultQuery)
 	if err != nil {
 		log.Fatal(err)
 	}

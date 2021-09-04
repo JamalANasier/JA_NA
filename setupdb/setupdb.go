@@ -23,53 +23,57 @@ func SetupClichouse() {
 		}
 		return
 	}
-	/*
-	_, err = connect.Exec(`
-	CREATE TABLE IF NOT EXISTS player_log (
-		current_time Date,
-		user_agent   String,
-		ip_address   String,
-		data_before  String,
-		data_after   String
-		) engine=Memory
-	`)
-	*/
-	_, err = connect.Exec(`
-			CREATE TABLE IF NOT EXISTS example (
-				country_code FixedString(2),
-				os_id        UInt8,
-				browser_id   UInt8,
-				categories   Array(Int16),
-				action_day   Date,
-				action_time  DateTime
-				) engine=Memory
-			`)
 
+	_, err = connect.Exec(`
+		CREATE TABLE IF NOT EXISTS player_log (
+			current_time Date,
+			user_agent   String,
+			ip_address   String,
+			data_before  String,
+			data_after   String
+			) engine=Memory
+		`)
 	if err != nil {
 		log.Fatal(err)
 	}
-	/*
-		var (
-			tx, _   = connect.Begin()
-			stmt, _ = tx.Prepare("INSERT INTO player_log (current_time, user_agent, ip_address, data_before, data_after) VALUES (?, ?, ?, ?, ?)")
-		)
-		defer stmt.Close()
-
-		for i := 0; i < 10; i++ {
-			if _, err := stmt.Exec(
-				time.Now(),
-				"RU",
-				"ipAppdress",
-				"dataBefore",
-				"dataAfter",
-			); err != nil {
+	
+			_, err = connect.Exec(`
+					CREATE TABLE IF NOT EXISTS example (
+						country_code FixedString(2),
+						os_id        UInt8,
+						browser_id   UInt8,
+						categories   Array(Int16),
+						action_day   Date,
+						action_time  DateTime
+					) engine=Memory
+				`)
+	
+		if err != nil {
 				log.Fatal(err)
 			}
-		}
 
-		if err := tx.Commit(); err != nil {
-			log.Fatal(err)
-		}
+		/*
+			var (
+				tx, _   = connect.Begin()
+				stmt, _ = tx.Prepare("INSERT INTO player_log (current_time, user_agent, ip_address, data_before, data_after) VALUES (?, ?, ?, ?, ?)")
+			)
+			defer stmt.Close()
+
+			for i := 0; i < 10; i++ {
+				if _, err := stmt.Exec(
+					time.Now(),
+					"RU",
+					"ipAppdress",
+					"dataBefore",
+					"dataAfter",
+				); err != nil {
+					log.Fatal(err)
+				}
+			}
+
+			if err := tx.Commit(); err != nil {
+				log.Fatal(err)
+			}
 	*/
 	rows, err := connect.Query("SELECT current_time, user_agent, ip_address, data_before, data_after FROM player_log")
 	if err != nil {
