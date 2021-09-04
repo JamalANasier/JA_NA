@@ -267,4 +267,4 @@ func main() {
 ## Alternative connectors
 
 - https://github.com/viciious/go-tarantool
-  Has tools to emulate tarantool, and to being replica for tarantool.
+  Has tools to emulate tarantool, unit testing, integration test, and to being replica for tarantool.
