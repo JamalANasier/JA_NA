@@ -34,6 +34,11 @@ then clone this repository to start coding and say :
 $ git clone https://github.com/JamalANasier/JA_NA
 ```
 
+to set your tarantool database and connection with LUA file :
+```
+docker run --name mytarantoolcontainer -p 3303:3303 -d -v /Users/jamalabdulnasir/Go/golib/src/github.com/jamalanasier/JA_NA/scripts:/opt/tarantool tarantool/tarantool tarantool /opt/tarantool/dhands.lua
+```
+
 <h2>Hello World</h2>
 
 Run this repo to test that your app is run
