@@ -36,7 +36,7 @@ $ git clone https://github.com/JamalANasier/JA_NA
 
 to set your tarantool database and connection with LUA file :
 ```
-docker run --name mytarantoolcontainer -p 3303:3303 -d -v /Users/jamalabdulnasir/Go/golib/src/github.com/jamalanasier/JA_NA/scripts:/opt/tarantool tarantool/tarantool tarantool /opt/tarantool/dhands.lua
+docker run --name mytarantoolcontainer -p 3303:3303 -d -v $PATH/github.com/jamalanasier/JA_NA/scripts:/opt/tarantool tarantool/tarantool tarantool /opt/tarantool/dhands.lua
 ```
 
 <h2>Hello World</h2>
