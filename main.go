@@ -11,6 +11,8 @@ func main() {
 
 	setupdb.SetupClichouse()
 	app := fiber.New()
+
+	//make your go app api run
 	apibyid.SetupRoutes(app)
 	app.Listen(3000)
 	/*  //test your tarantool
