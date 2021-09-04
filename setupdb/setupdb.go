@@ -36,8 +36,8 @@ func SetupClichouse() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
-			_, err = connect.Exec(`
+
+	_, err = connect.Exec(`
 					CREATE TABLE IF NOT EXISTS example (
 						country_code FixedString(2),
 						os_id        UInt8,
@@ -47,33 +47,33 @@ func SetupClichouse() {
 						action_time  DateTime
 					) engine=Memory
 				`)
-	
-		if err != nil {
-				log.Fatal(err)
-			}
 
-		/*
-			var (
-				tx, _   = connect.Begin()
-				stmt, _ = tx.Prepare("INSERT INTO player_log (current_time, user_agent, ip_address, data_before, data_after) VALUES (?, ?, ?, ?, ?)")
-			)
-			defer stmt.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-			for i := 0; i < 10; i++ {
-				if _, err := stmt.Exec(
-					time.Now(),
-					"RU",
-					"ipAppdress",
-					"dataBefore",
-					"dataAfter",
-				); err != nil {
-					log.Fatal(err)
-				}
-			}
+	/* //insert test data on your clickhouse
+	var (
+		tx, _   = connect.Begin()
+		stmt, _ = tx.Prepare("INSERT INTO player_log (current_time, user_agent, ip_address, data_before, data_after) VALUES (?, ?, ?, ?, ?)")
+	)
+	defer stmt.Close()
 
-			if err := tx.Commit(); err != nil {
-				log.Fatal(err)
-			}
+	for i := 0; i < 10; i++ {
+		if _, err := stmt.Exec(
+			time.Now(),
+			"RU",
+			"ipAppdress",
+			"dataBefore",
+			"dataAfter",
+		); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Fatal(err)
+	}
 	*/
 	rows, err := connect.Query("SELECT current_time, user_agent, ip_address, data_before, data_after FROM player_log")
 	if err != nil {
